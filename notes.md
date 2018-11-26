@@ -22,3 +22,11 @@ https://www.sciencedirect.com/science/article/pii/S0169260715003314
 
 - F   Fusion beat
 
+
+# Diagnosis
+
+- R: https://en.wikipedia.org/wiki/Right_bundle_branch_block
+  - Use lead V1
+  - Rhythm originating above ventricles.
+  - qrs duration > 100ms
+  -
