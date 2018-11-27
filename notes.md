@@ -12,21 +12,34 @@ https://www.sciencedirect.com/science/article/pii/S0169260715003314
 
 # Beat types
 
+## Morphological
+
 - Normal
-- L Left bundle branch block beat
+- L   Left bundle branch block beat
 - R   Right bundle branch block beat
 - V   Premature ventricular contraction
-
 - S   supraventricular ectopic beat (S)
-- A   atrial premature beat
-
 - F   Fusion beat
+
+## Placement
+
+- A   atrial premature beat (looks normal, just earlier)
+- Escaped beat
 
 
 # Diagnosis
 
+- L:
+  - In MITDB, have channels MLII and V1
+  - QRS duration greater than 120 milliseconds
+  - Absence of Q wave in leads I, V5 and V6
+  - ST and T wave displacement opposite to the major deflection of the QRS complex
+
+
 - R: https://en.wikipedia.org/wiki/Right_bundle_branch_block
-  - Use lead V1
+  - Depol travels from left to right ventricle.
+  - Use lead V1 or V6.
   - Rhythm originating above ventricles.
   - qrs duration > 100ms
   -
+
