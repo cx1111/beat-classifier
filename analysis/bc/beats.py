@@ -3,6 +3,9 @@ import pdb
 
 import matplotlib.pyplot as plt
 import numpy as np
+import wfdb
+
+from .io import ann_to_df
 
 
 def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
@@ -89,67 +92,26 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     return beats, centers
 
 
-
-
-
-def get_beat_bank(start_sec=280, stop_sec=300):
+def get_beat_bank(data_dir, beat_table, wanted_type, min_len=1):
     """
-    Make a beat bank of ecgs by extracting all beats from
-    the same time section of channels 0 and 1 of all true
-    alarm training records.
+    Make a beat bank of ecgs by extracting all beats from the records
+    from MITDB containing at least `min_len` seconds of that type of
+    beat, according to the table of beat information `beats_df`.
+
     """
-    fs = 250
-    beat_bank = {}
-    # No cheating! We should only have access to training data
-    records_train, records_test = train_test_split(record_names)
+    records = beat_table.loc[beat_table[wanted_type]>=min_len].index.values
 
-    for record_name in records_train:
-        # Skip false alarm records
-        if not alarms.loc[record_name, 'result']:
-            continue
-        # Read record
-        signal, fields = wfdb.rdsamp(os.path.join(data_dir, record_name),
-                                     sampfrom=start_sec*fs, sampto=stop_sec*fs,
-                                     channels=[0, 1])
-        # Determine which signals are valid
-        valid = is_valid(signal)
+    all_beats, all_centers = [], []
+    for rec_name in records:
+        # Load the signals and L beat annotations
+        sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
+        ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
+        # Get the peak samples and symbols in a dataframe. Remove the non-beat annotations
+        qrs_df = ann_to_df(ann, rm_sym=['+', '~'])
+        beats, centers = get_beats(sig=sig[:, 0], qrs_inds=qrs_df['sample'].values,
+                               beat_types = qrs_df['symbol'].values, wanted_type=wanted_type)
+        all_beats += beats
+        all_centers += centers
 
-        # Clean the signals, removing nans
-        signal = fill_missing(sig=signal)
-        # Filter the signal
-        signal = bandpass(signal, fs=fs, f_low=0.5, f_high=40, order=2)
+    return all_beats, all_centers
 
-        # Get beats from each channel
-        for ch in range(2):
-            sig_ch = signal[:, ch]
-            sig_name = fields['sig_name'][ch]
-
-            # Skip the signals with too few instances
-            if sig_name.startswith('aV'):
-                continue
-
-            # Skip flatline signals
-            if not valid[ch]:
-                continue
-
-            # Get beat locations
-            qrs_inds = processing.xqrs_detect(sig_ch, fs=fs,
-                                              verbose=False)
-            # Skip if too few beats
-            if len(qrs_inds) < 2:
-                continue
-            # Normalize the signal
-            sig_ch = normalize(sig_ch)
-            # Get the beats
-            beats, _ = get_beats(sig_ch, qrs_inds)
-            if sig_name not in beat_bank.keys():
-                beat_bank[sig_name] = []
-            beat_bank[sig_name] = beat_bank[sig_name] + beats
-    print('Finished obtaining beat bank')
-
-    # Remove signals without beats from the dictionary
-    for sig_name in beat_bank:
-        if len(beat_bank[sig_name]) == 0:
-            print('Obtained no beats for signal %s. Removing.' % sig_name)
-            del(beat_bank[sig_name])
-    return beat_bank
