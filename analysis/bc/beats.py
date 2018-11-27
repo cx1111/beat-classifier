@@ -1,13 +1,16 @@
 import os
+import pdb
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def get_beats(sig, beat_inds, prop_left=0.3, rr_limits=(108, 720),
-              view=False):
+def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
+              rr_limits=(108, 540), view=False):
     """
-    Given a signal and beat locations, extract the beats.
+    Given a signal and beat locations, extract the beats of a certain
+    type.
+
     Beats are taken as prop_left of the signal fraction to the previous
     beat, and 1-prop_left of the signal fraction to the next beat.
 
@@ -18,14 +21,19 @@ def get_beats(sig, beat_inds, prop_left=0.3, rr_limits=(108, 720),
     ---------
     sig : numpy array
         The 1d signal array
-    beat_inds : numpy array
+    qrs_inds : numpy array
         The locations of the beat indices
+    beat_types : list
+        The labeled beat types
+    wanted_type : str
+        The type of beat to extract. All others will be skipped, though
+        their qrs locations will be used to calculate beat boundaries.
     prop_left : float, optional
         The fraction/proportion of the beat that lies to the left of the
         beat index. The remaining 1-prop_left lies to the right.
     rr_limits : tuple, optional
         Low and high limits of acceptable rr values. Default limits 108
-        and 720 samples correspond to 200bpm and 30bpm at fs=360.
+        and 540 samples correspond to 200bpm and 40bpm at fs=360.
     view : bool, optional
         Whether to display the individual beats collected
 
@@ -39,48 +47,49 @@ def get_beats(sig, beat_inds, prop_left=0.3, rr_limits=(108, 720),
 
     prop_right = 1 - prop_left
     sig_len = len(sig)
-    n_beats = len(beat_inds)
+    n_beats = len(qrs_inds)
 
     # List of numpy arrays of beat segments
     beats = []
     # qrs complex detection index relative to the start of each beat
     centers = []
     # rr intervals, used to extract beats
-    rr = np.diff(beat_inds)
+    rr = np.diff(qrs_inds)
     mean_rr = np.average(rr[(rr < rr_limits[1]) & (rr > rr_limits[0])])
 
     for i in range(n_beats):
-        if i == 0:
-            len_left = rr[0]
+        # Only keep wanted beat types
+        if beat_types[i] == wanted_type:
+            # Previous and next rr intervals for this qrs
+            rr_prev = rr[max(0, i - 1)]
+            rr_next = rr[min(i, n_beats-2)]
 
-        # Previous and next rr intervals for this qrs
-        rr_prev = rr[max(0, i - 1)]
-        rr_next = rr[min(i, n_beats-2)]
+            # Constrain the rr intervals
+            if not (rr_limits[0] < rr_prev < rr_limits[1]):
+                rr_prev = mean_rr
+            if not (rr_limits[0] < rr_next < rr_limits[1]):
+                rr_next = mean_rr
+            len_left = int(rr_prev * prop_left)
+            len_right = int(rr_next * prop_right)
 
-        # Constrain the rr intervals
-        if  not rr_limits[0] < rr_prev < rr_limits[1]:
-            rr_prev = mean_rr
-        if  not rr_limits[0] < rr_next < rr_limits[1]:
-            rr_next = mean_rr
+            # Skip beats too close to boundaries
+            if qrs_inds[i] - len_left < 0 or qrs_inds[i] + len_right > sig_len-1:
+                continue
 
-        len_left = int(rr_prev * prop_left)
-        len_right = int(rr_next * prop_right)
+            beats.append(sig[qrs_inds[i] - len_left:qrs_inds[i] + len_right])
+            centers.append(len_left)
 
-        # Skip beats too close to boundaries
-        if beat_inds[i] - len_left < 0 or beat_inds[i] + len_right > sig_len-1:
-            continue
-
-        beats.append(sig[beat_inds[i] - len_left:beat_inds[i] + len_right])
-        centers.append(len_left)
-
-        if view:
-            # Viewing results
-            print('len_left:', len_left, 'len_right:', len_right)
-            plt.plot(beats[-1])
-            plt.plot(centers[-1], beats[-1][centers[-1]], 'r*')
-            plt.show()
+            if view:
+                # Viewing results
+                print('len_left:', len_left, 'len_right:', len_right)
+                plt.plot(beats[-1])
+                plt.plot(centers[-1], beats[-1][centers[-1]], 'r*')
+                plt.show()
 
     return beats, centers
+
+
+
 
 
 def get_beat_bank(start_sec=280, stop_sec=300):
