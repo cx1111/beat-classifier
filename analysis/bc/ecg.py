@@ -12,6 +12,8 @@ def segment_beat(sig, center):
     # Gradients
     dy = np.diff(sig)
 
+
+
     return p0, p1, p2,
 
 
