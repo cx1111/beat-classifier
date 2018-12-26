@@ -9,9 +9,8 @@ This book explores ways to leverage information technology and machine learning 
 
 # Objectives
 
-This workshop aims to introduce clinicians to popular statistical methods used in machine learning, without delving into the underlying mathematical theory.
+This workshop aims to introduce users to core methods used to interpret ECGs.
 
-We will discuss , as well as general concepts of model fit and cross-validation.
 
 In the hands-on exercise, you will be asked to implement and evaluate these models on a clinical prediction problem.
 
@@ -21,19 +20,48 @@ No prior programming experience is assumed. Basics of the Python language and Ju
 
 # Background
 
-
-Short description of ... Jupyter Notebook
-
+The electrocardiogram (ECG) is an effective non-invasive tool used by physicians to inspect the functionality of hearts.
 
 
 
+By placing sets of electrodes over a patient's skin at given locations, each potential difference measured by each electrode pair shows the vector
 
 
-# Exercises: A set of exercises to help the reader understand the concepts. Jupyter notebooks and online materials are accepted.
+
+As a physician looks upon a visual ECG diagram and interprets the underlying workings or irregularities of the heart, so too can algorithms be developed to automatically process these signals and extract information.
+
+
+
+
+
+
+# Exercises: A set of exercises to help the reader understand the concepts
+
+
+- qrs detection
+- beat classification
+  - qrs width
+    - That algorithm
+    - convolution with wavelet
+  - qrs deflection direction
+  - t wave deflection direction opposite
+
 
 
 
 # Uses and Limitations: It is important that each chapter covers both the various use cases and the limitations of the topic covered by the chapter. Ideally, we would appreciate if the authors could “connect the dots” between the chapter and the other materials in the book.
 
-# References: We highly recommend either using Zotero or EndNote. Please use Harvard reference styling.
+
+Although feature engineering and parameter tuning is required, fundamental signal processing techniques offer full transparency and interpretability which is important in the medical setting. In addition, the algorithms are relatively inexpensive to compute, and simple to implement, making it highly applicable to remote monitoring applications.
+
+Even simple microcontrollers have enough memory and compute power to implement the beat-classification and qrs detection algorithms in this chapter. Do not need to be trained by GPUs.
+
+
+
+
+
+
+# References:
+
+- Please use Harvard reference styling.
 

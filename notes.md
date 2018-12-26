@@ -47,4 +47,4 @@ https://www.sciencedirect.com/science/article/pii/S0169260715003314
 **General Classification Features**
 - Morphology. ie qrs width, wave directions?
 - Frequency information?
-- CNN?
+

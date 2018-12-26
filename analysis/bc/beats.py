@@ -9,7 +9,7 @@ from .io import ann_to_df
 
 
 def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
-              rr_limits=(108, 540), view=False):
+              rr_limits=(108, 540), single_chan=False, view=False):
     """
     Given a signal and beat locations, extract the beats of a certain
     type.
@@ -23,11 +23,11 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     Paramters
     ---------
     sig : numpy array
-        The 1d signal array
+        The single or multi-channel signal.
     qrs_inds : numpy array
-        The locations of the beat indices
+        The locations of the beat indices.
     beat_types : list
-        The labeled beat types
+        The labeled beat types.
     wanted_type : str
         The type of beat to extract. All others will be skipped, though
         their qrs locations will be used to calculate beat boundaries.
@@ -37,6 +37,9 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     rr_limits : tuple, optional
         Low and high limits of acceptable rr values. Default limits 108
         and 540 samples correspond to 200bpm and 40bpm at fs=360.
+    single_chan : bool, optional
+        If sig has more than 1 channel, specifies whether to keep only
+        the first channel. Option ignored if sig has one channel.
     view : bool, optional
         Whether to display the individual beats collected
 
@@ -47,9 +50,8 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     centers : list
         List of relative locations of the beat centers for each beat
     """
-
     prop_right = 1 - prop_left
-    sig_len = len(sig)
+    sig_len = sig.shape[0]
     n_beats = len(qrs_inds)
 
     # List of numpy arrays of beat segments
@@ -79,7 +81,13 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
             if qrs_inds[i] - len_left < 0 or qrs_inds[i] + len_right > sig_len-1:
                 continue
 
-            beats.append(sig[qrs_inds[i] - len_left:qrs_inds[i] + len_right])
+            if sig.ndim == 1:
+                beats.append(sig[qrs_inds[i] - len_left:qrs_inds[i] + len_right])
+            else:
+                if single_chan:
+                    beats.append(sig[qrs_inds[i] - len_left:qrs_inds[i] + len_right, 0])
+                else:
+                    beats.append(sig[qrs_inds[i] - len_left:qrs_inds[i] + len_right, :])
             centers.append(len_left)
 
             if view:
@@ -92,26 +100,34 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     return beats, centers
 
 
-def get_beat_bank(data_dir, beat_table, wanted_type, min_len=1):
+def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False, min_len=1):
     """
     Make a beat bank of ecgs by extracting all beats from the records
     from MITDB containing at least `min_len` seconds of that type of
     beat, according to the table of beat information `beats_df`.
 
+    40/48 of the records have channels MLII and V1.
+    Skip the records with different channels.
+
     """
+    # records with alternative channel sets
+    ALT_SIG_RECORDS = ['100', '102', '103', '104', '114', '117', '123', '124']
+
     records = beat_table.loc[beat_table[wanted_type]>=min_len].index.values
 
-    all_beats, all_centers = [], []
+    all_beats, all_centers, all_sig_names = [], []
     for rec_name in records:
-        # Load the signals and L beat annotations
-        sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
-        ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
-        # Get the peak samples and symbols in a dataframe. Remove the non-beat annotations
-        qrs_df = ann_to_df(ann, rm_sym=['+', '~'])
-        beats, centers = get_beats(sig=sig[:, 0], qrs_inds=qrs_df['sample'].values,
-                               beat_types = qrs_df['symbol'].values, wanted_type=wanted_type)
-        all_beats += beats
-        all_centers += centers
+        # Skip the records with different channels
+        if rec_name not in ALT_SIG_RECORDS:
+            # Load the signals and L beat annotations
+            sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
+            ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
+            # Get the peak samples and symbols in a dataframe. Remove the non-beat annotations
+            qrs_df = ann_to_df(ann, rm_sym=['+', '~'])
+            beats, centers = get_beats(sig=sig, qrs_inds=qrs_df['sample'].values,
+                beat_types=qrs_df['symbol'].values, wanted_type=wanted_type,
+                single_chan=single_chan)
+            all_beats += beats
+            all_centers += centers
 
     return all_beats, all_centers
-
