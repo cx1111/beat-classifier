@@ -115,7 +115,7 @@ def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False, min_len=
 
     records = beat_table.loc[beat_table[wanted_type]>=min_len].index.values
 
-    all_beats, all_centers, all_sig_names = [], []
+    all_beats, all_centers = [], []
     for rec_name in records:
         # Skip the records with different channels
         if rec_name not in ALT_SIG_RECORDS:
