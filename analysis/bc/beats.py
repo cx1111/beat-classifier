@@ -9,6 +9,9 @@ from .io import ann_to_df
 from .preprocess import bandpass
 
 
+BEAT_TYPES = ['Normal', 'LBBB', 'RBBB', 'Ventricular']
+
+
 def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
               rr_limits=(108, 540), fixed_width=None, single_chan=False,
               view=False):
@@ -133,8 +136,9 @@ def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
     for rec_name in records:
         # Skip the records with different channels
         if rec_name not in ALT_SIG_RECORDS:
-            # Load the signals and L beat annotations
+            # Load the signals and beat annotations
             sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
+
             if filter:
                 sig = bandpass(sig)
 

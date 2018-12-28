@@ -39,7 +39,7 @@ def plot_beat(sig, center, style='C0', figsize=(6.4, 4.8),
     plt.show()
 
 
-def plot_four_beats(beats, centers, figsize=(16, 9)):
+def plot_four_beats(beats, centers, figsize=(16, 9), seconds=True):
     """
     Plot and compare the four different beat types.
 
@@ -60,7 +60,7 @@ def plot_four_beats(beats, centers, figsize=(16, 9)):
 
     for beatnum in range(4):
         sig_len = beats[beatnum].shape[0]
-        t = np.arange(0, sig_len/fs, 1/fs)
+        t = np.arange(0, sig_len/fs, 1/fs) if seconds else np.arange(0, sig_len)
         for ch in range(2):
             plt.subplot(4, 2, beatnum*2 + ch + 1)
             if beatnum == 0:
@@ -69,6 +69,6 @@ def plot_four_beats(beats, centers, figsize=(16, 9)):
             plt.plot(t[centers[beatnum]], beats[beatnum][centers[beatnum], ch], 'k*')
             plt.legend([titles[beatnum]])
             plt.ylabel('{}/mV'.format(sig_names[ch]))
-
-    plt.xlabel('time/second')
+            if beatnum == 3:
+                plt.xlabel('time/{}'.format('second' if seconds else 'sample'))
     plt.show()
