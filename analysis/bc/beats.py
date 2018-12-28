@@ -6,6 +6,7 @@ import numpy as np
 import wfdb
 
 from .io import ann_to_df
+from .preprocess import bandpass
 
 
 def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
@@ -100,7 +101,8 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     return beats, centers
 
 
-def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False, min_len=1):
+def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
+                  filter=False,min_len=1):
     """
     Make a beat bank of ecgs by extracting all beats from the records
     from MITDB containing at least `min_len` seconds of that type of
@@ -121,6 +123,9 @@ def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False, min_len=
         if rec_name not in ALT_SIG_RECORDS:
             # Load the signals and L beat annotations
             sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
+            if filter:
+                sig = bandpass(sig)
+
             ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
             # Get the peak samples and symbols in a dataframe. Remove the non-beat annotations
             qrs_df = ann_to_df(ann, rm_sym=['+', '~'])

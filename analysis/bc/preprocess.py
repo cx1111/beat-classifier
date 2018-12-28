@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.stats import mode
 from scipy.signal import butter, filtfilt
 
