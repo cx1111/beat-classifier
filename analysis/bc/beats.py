@@ -10,7 +10,8 @@ from .preprocess import bandpass
 
 
 def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
-              rr_limits=(108, 540), single_chan=False, view=False):
+              rr_limits=(108, 540), fixed_width=None, single_chan=False,
+              view=False):
     """
     Given a signal and beat locations, extract the beats of a certain
     type.
@@ -38,6 +39,10 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     rr_limits : tuple, optional
         Low and high limits of acceptable rr values. Default limits 108
         and 540 samples correspond to 200bpm and 40bpm at fs=360.
+    fixed_width : int, optional
+        Whether to get beats of fixed width instead. If not None, this
+        function ignores the `prop_left` and `rr_limits` arguments and
+        instead returns beats of width specified by this parameter.
     single_chan : bool, optional
         If sig has more than 1 channel, specifies whether to keep only
         the first channel. Option ignored if sig has one channel.
@@ -55,6 +60,9 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     sig_len = sig.shape[0]
     n_beats = len(qrs_inds)
 
+    if fixed_width is not None:
+        len_left_fixed = int(fixed_width / 2)
+
     # List of numpy arrays of beat segments
     beats = []
     # qrs complex detection index relative to the start of each beat
@@ -66,17 +74,21 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     for i in range(n_beats):
         # Only keep wanted beat types
         if beat_types[i] == wanted_type:
-            # Previous and next rr intervals for this qrs
-            rr_prev = rr[max(0, i - 1)]
-            rr_next = rr[min(i, n_beats-2)]
 
-            # Constrain the rr intervals
-            if not (rr_limits[0] < rr_prev < rr_limits[1]):
-                rr_prev = mean_rr
-            if not (rr_limits[0] < rr_next < rr_limits[1]):
-                rr_next = mean_rr
-            len_left = int(rr_prev * prop_left)
-            len_right = int(rr_next * prop_right)
+            if fixed_width is None:
+                # Previous and next rr intervals for this qrs
+                rr_prev = rr[max(0, i - 1)]
+                rr_next = rr[min(i, n_beats-2)]
+
+                # Constrain the rr intervals
+                if not (rr_limits[0] < rr_prev < rr_limits[1]):
+                    rr_prev = mean_rr
+                if not (rr_limits[0] < rr_next < rr_limits[1]):
+                    rr_next = mean_rr
+                len_left = int(rr_prev * prop_left)
+                len_right = int(rr_next * prop_right)
+            else:
+                len_left = len_right = len_left_fixed
 
             # Skip beats too close to boundaries
             if qrs_inds[i] - len_left < 0 or qrs_inds[i] + len_right > sig_len-1:
@@ -102,7 +114,7 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
 
 
 def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
-                  filter=False,min_len=1):
+                  filter=False, fixed_width=None, min_len=1):
     """
     Make a beat bank of ecgs by extracting all beats from the records
     from MITDB containing at least `min_len` seconds of that type of
@@ -129,9 +141,11 @@ def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
             ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
             # Get the peak samples and symbols in a dataframe. Remove the non-beat annotations
             qrs_df = ann_to_df(ann, rm_sym=['+', '~'])
+            # Get the beats and centers of the record
             beats, centers = get_beats(sig=sig, qrs_inds=qrs_df['sample'].values,
                 beat_types=qrs_df['symbol'].values, wanted_type=wanted_type,
-                single_chan=single_chan)
+                single_chan=single_chan, fixed_width=fixed_width)
+
             all_beats += beats
             all_centers += centers
 
