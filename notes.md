@@ -43,6 +43,8 @@ https://www.sciencedirect.com/science/article/pii/S0169260715003314
   - qrs duration > 100ms
   -
 
+- V:
+
 
 **General Classification Features**
 - Morphology. ie qrs width, wave directions?

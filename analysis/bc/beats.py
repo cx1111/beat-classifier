@@ -108,7 +108,6 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
 
             if view:
                 # Viewing results
-                print('len_left:', len_left, 'len_right:', len_right)
                 plt.plot(beats[-1])
                 plt.plot(centers[-1], beats[-1][centers[-1]], 'r*')
                 plt.show()
