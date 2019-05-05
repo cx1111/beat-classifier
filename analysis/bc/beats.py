@@ -42,7 +42,7 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
         Low and high limits of acceptable rr values. Default limits 108
         and 540 samples correspond to 200bpm and 40bpm at fs=360.
     fixed_width : int, optional
-        Whether to get beats of fixed width instead. If not None, this
+        Whether to get beats of fixed width instead. If set, this
         function ignores the `prop_left` and `rr_limits` arguments and
         instead returns beats of width specified by this parameter.
     single_chan : bool, optional
