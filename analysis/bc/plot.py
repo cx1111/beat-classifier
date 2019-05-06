@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .beats import BEAT_TYPES
+
 
 def plot_beat(sig, center, style='C0', figsize=(6.4, 4.8),
               sig_names=['MLII', 'V1'], title='', seconds=True):
@@ -54,7 +56,6 @@ def plot_four_beats(beats, centers, figsize=(16, 9), seconds=True):
     plt.figure(figsize=figsize)
 
     fs = 360
-    titles = ['Normal', 'LBBB', 'RBBB', 'Ventricular']
     styles = ['C0', 'C1', 'C2', 'C3']
     sig_names = ['MLII', 'V1']
 
@@ -67,7 +68,7 @@ def plot_four_beats(beats, centers, figsize=(16, 9), seconds=True):
                 plt.title('Channel {}'.format(sig_names[ch]))
             plt.plot(t, beats[beatnum][:, ch], styles[beatnum])
             plt.plot(t[centers[beatnum]], beats[beatnum][centers[beatnum], ch], 'k*')
-            plt.legend([titles[beatnum]])
+            plt.legend([BEAT_TYPES[beatnum]])
             plt.ylabel('{}/mV'.format(sig_names[ch]))
             if beatnum == 3:
                 plt.xlabel('time/{}'.format('second' if seconds else 'sample'))

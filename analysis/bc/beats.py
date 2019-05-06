@@ -42,9 +42,8 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
         Low and high limits of acceptable rr values. Default limits 108
         and 540 samples correspond to 200bpm and 40bpm at fs=360.
     fixed_width : int, optional
-        Whether to get beats of fixed width instead. If set, this
-        function ignores the `prop_left` and `rr_limits` arguments and
-        instead returns beats of width specified by this parameter.
+        If set, this returns beats of width specified by this parameter,
+        continuing to use `prop_left` but ignoring `rr_limits`.
     single_chan : bool, optional
         If sig has more than 1 channel, specifies whether to keep only
         the first channel. Option ignored if sig has one channel.
@@ -61,9 +60,6 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
     prop_right = 1 - prop_left
     sig_len = sig.shape[0]
     n_beats = len(qrs_inds)
-
-    if fixed_width is not None:
-        len_left_fixed = int(fixed_width / 2)
 
     # List of numpy arrays of beat segments
     beats = []
@@ -90,7 +86,8 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
                 len_left = int(rr_prev * prop_left)
                 len_right = int(rr_next * prop_right)
             else:
-                len_left = len_right = len_left_fixed
+                len_left = int(fixed_width * prop_left)
+                len_right = fixed_width - len_left
 
             # Skip beats too close to boundaries
             if qrs_inds[i] - len_left < 0 or qrs_inds[i] + len_right > sig_len-1:
@@ -115,7 +112,7 @@ def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
 
 
 def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
-                  filter=False, fixed_width=None, min_len=1):
+                  filter_beats=False, fixed_width=None, min_len=1):
     """
     Make a beat bank of ecgs by extracting all beats from the records
     from MITDB containing at least `min_len` seconds of that type of
@@ -137,7 +134,7 @@ def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
             # Load the signals and beat annotations
             sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
 
-            if filter:
+            if filter_beats:
                 sig = bandpass(sig)
 
             ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
