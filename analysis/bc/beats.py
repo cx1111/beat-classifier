@@ -5,10 +5,12 @@ import numpy as np
 import wfdb
 
 from .io import ann_to_df
-from .preprocess import bandpass
+from .preprocess import filter_band
 
 
 BEAT_TYPES = ['Normal', 'LBBB', 'RBBB', 'Ventricular']
+
+SIG_NAMES = ['MLII', 'V1']
 
 
 def get_beats(sig, qrs_inds, beat_types, wanted_type, prop_left=0.3,
@@ -135,10 +137,12 @@ def get_beat_bank(data_dir, beat_table, wanted_type, single_chan=False,
             sig, fields = wfdb.rdsamp(os.path.join(data_dir, rec_name))
 
             if filter_beats:
-                sig = bandpass(sig)
+                sig = filter_band(sig, btype='band', f_low=0.5, f_high=40)
+                sig = filter_band(sig, btype='stop', f_low=55, f_high=65)
 
             ann = wfdb.rdann(os.path.join(data_dir, rec_name), extension='atr')
-            # Get the peak samples and symbols in a dataframe. Remove the non-beat annotations
+            # Get the peak samples and symbols in a dataframe. Remove
+            # the non-beat annotations
             qrs_df = ann_to_df(ann, rm_sym=['+', '~'])
             # Get the beats and centers of the record
             beats, centers = get_beats(sig=sig, qrs_inds=qrs_df['sample'].values,

@@ -9,7 +9,8 @@ def filter_band(sig, btype, fs=360, f_low=0.5, f_high=40, order=4):
     if sig.ndim ==2:
         sig_filt = np.zeros(sig.shape)
         for ch in range(sig.shape[1]):
-            sig_filt[:, ch] = bandpass(sig[:, ch], fs, f_low, f_high, order)
+            sig_filt[:, ch] = filter_band(sig[:, ch], btype, fs, f_low, f_high,
+                                          order)
         return sig_filt
 
     if btype not in ['band', 'stop']:
